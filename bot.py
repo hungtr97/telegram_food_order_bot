@@ -124,7 +124,7 @@ async def order_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if is_close:
         images = os.listdir("images")
         image_path = os.path.join("images", random.choice(images))
-        await update.message.reply_photo(image_path)
+        await update.message.reply_sticker(image_path)
         await update.message.reply_text("Đóng đơn rồi đó đá đa...")
         return
     
@@ -165,38 +165,58 @@ async def order_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     db.set(chat_id, value)
     return
 
-async def enable_notify_lunch_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Add jobs to the queue."""
-    chat_id = update.effective_message.chat_id
-    job_name = f"notify_lunch_{str(chat_id)}"
-    if len(context.job_queue.get_jobs_by_name(job_name)) == 0:
-        context.job_queue.run_daily(notify_lunch,
-                                    time=datetime.time(11, 0, 0, tzinfo=pytz.timezone('Asia/Ho_Chi_Minh')),
-                                    days=tuple(range(1,6)), # ignore weekends
-                                    chat_id=chat_id,
-                                    name=job_name,
-                                )
-    text = "OK!"
-    await update.effective_message.reply_text(text)
-
-async def disable_notify_lunch_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Remove jobs from the queue."""
-    chat_id = update.effective_message.chat_id
-    job_name = f"notify_lunch_{str(chat_id)}"
-    for current_job in context.job_queue.get_jobs_by_name(job_name):
-        current_job.schedule_removal()
-    text = "OK!"
-    await update.effective_message.reply_text(text)
 
 async def notify_lunch(context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send the notify"""
     job = context.job
     image_path = "images/image.jpeg"
-    await context.bot.send_photo(job.chat_id, photo=image_path)
+    await context.bot.send_sticker(job.chat_id, image_path)
 
     df = pd.read_csv("vendors.csv")
     choosen_food = df.sample(1).iloc[0]["name"]
     await context.bot.send_message(job.chat_id, text=f"{choosen_food} đê")
+
+
+async def notify_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """set daily notify schedule"""
+    chat_id = update.effective_message.chat_id
+    value = get_text_from_command(update)
+    chat_id_configs = db.get(str(chat_id))
+    if not value in ["on", "off"]:
+        
+        status = "Bật" if chat_id_configs.get("is_daily_notify") else "Tắt"
+        return await update.effective_message.reply_text(f"Thông báo hằng ngày đang {status}.")
+    
+    chat_id_configs["is_daily_notify"] = True if (value=="on") else False
+    db.set(str(chat_id), chat_id_configs)
+    job_name = f"notify_lunch_{str(chat_id)}"
+    if value=="on":
+        if len(context.job_queue.get_jobs_by_name(job_name)) == 0:
+            context.job_queue.run_daily(notify_lunch,
+                                        time=datetime.time(11, 00, 0, tzinfo=pytz.timezone('Asia/Ho_Chi_Minh')),
+                                        days=tuple(range(1,6)), # ignore weekends
+                                        chat_id=chat_id,
+                                        name=job_name,
+                                        )
+    else:
+        for current_job in context.job_queue.get_jobs_by_name(job_name):
+            current_job.schedule_removal()
+    
+    return await update.effective_message.reply_text("✅ OK!")
+
+
+def init_notify_schedule(application:Application):
+    job_queue = application.job_queue
+    chat_ids = db.getall()
+    for chat_id in chat_ids:
+        if not db.get(chat_id).get("is_daily_notify"):
+            continue
+        job_queue.run_daily(notify_lunch,
+                            time=datetime.time(13,48,0, tzinfo=pytz.timezone('Asia/Ho_Chi_Minh')),
+                            days=tuple(range(1,6)), # ignore weekends
+                            chat_id=chat_id,
+                            name=f"notify_lunch_{str(chat_id)}"
+                            )
 
 
 def main() -> None:
@@ -208,8 +228,10 @@ def main() -> None:
     application.add_handler(CommandHandler("retract", retract_order_command))
     application.add_handler(CommandHandler("close", close_command))
     application.add_handler(CommandHandler("open", open_command))
-    application.add_handler(CommandHandler('enable_notify', enable_notify_lunch_command))
-    application.add_handler(CommandHandler('disable_notify', disable_notify_lunch_command))
+    application.add_handler(CommandHandler("notify", notify_command))
+
+    # 
+    init_notify_schedule(application)
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling()
