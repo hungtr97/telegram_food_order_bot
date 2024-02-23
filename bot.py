@@ -1,7 +1,9 @@
 import logging
 from telegram import ForceReply, Update
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, JobQueue
 from telegram.constants import MessageEntityType, ParseMode
+import datetime, pytz
+import pandas as pd
 import pickledb
 db = pickledb.load('order.db', True)
 import random
@@ -42,10 +44,18 @@ async def close_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             "isOpen": False,
             'orders' : {}
         }
+        db.set(chat_id, value)
+        await update.message.reply_text("✅ OK!")
     else:
+        candidates = list(value['orders'].keys())
         value['isOpen'] = False
-    db.set(chat_id, value)
-    await update.message.reply_text("✅ OK!")
+        db.set(chat_id, value)
+        await update.message.reply_text("✅ OK!")
+        chat_id = update.effective_message.chat_id
+        if str(chat_id) == "4179085435": # group "Đặt cơm 2024"
+            if len(candidates) > 0:
+                pickup_persons = ', '.join(random.choices(candidates, k=len(candidates)//10+1))
+                await update.message.reply_text(f"<b>{pickup_persons}</b> ơi, chúng tôi tin bạn 🙆‍♂️", parse_mode=ParseMode.HTML)
 
 
 async def open_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -155,6 +165,39 @@ async def order_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     db.set(chat_id, value)
     return
 
+async def enable_notify_lunch_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Add jobs to the queue."""
+    chat_id = update.effective_message.chat_id
+    job_name = f"notify_lunch_{str(chat_id)}"
+    if len(context.job_queue.get_jobs_by_name(job_name)) == 0:
+        context.job_queue.run_daily(notify_lunch,
+                                    time=datetime.time(11, 0, 0, tzinfo=pytz.timezone('Asia/Ho_Chi_Minh')),
+                                    days=tuple(range(1,6)), # ignore weekends
+                                    chat_id=chat_id,
+                                    name=job_name,
+                                )
+    text = "OK!"
+    await update.effective_message.reply_text(text)
+
+async def disable_notify_lunch_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Remove jobs from the queue."""
+    chat_id = update.effective_message.chat_id
+    job_name = f"notify_lunch_{str(chat_id)}"
+    for current_job in context.job_queue.get_jobs_by_name(job_name):
+        current_job.schedule_removal()
+    text = "OK!"
+    await update.effective_message.reply_text(text)
+
+async def notify_lunch(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send the notify"""
+    job = context.job
+    image_path = "images/image.jpeg"
+    await context.bot.send_photo(job.chat_id, photo=image_path)
+
+    df = pd.read_csv("vendors.csv")
+    choosen_food = df.sample(1).iloc[0]["name"]
+    await context.bot.send_message(job.chat_id, text=f"{choosen_food} đê")
+
 
 def main() -> None:
     application = Application.builder().token("6528017239:AAGN59Vgr3v8podnhIZoyobis7XqaERHIuo").build()
@@ -165,6 +208,8 @@ def main() -> None:
     application.add_handler(CommandHandler("retract", retract_order_command))
     application.add_handler(CommandHandler("close", close_command))
     application.add_handler(CommandHandler("open", open_command))
+    application.add_handler(CommandHandler('enable_notify', enable_notify_lunch_command))
+    application.add_handler(CommandHandler('disable_notify', disable_notify_lunch_command))
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling()
