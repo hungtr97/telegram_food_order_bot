@@ -193,7 +193,7 @@ async def notify_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if value=="on":
         if len(context.job_queue.get_jobs_by_name(job_name)) == 0:
             context.job_queue.run_daily(notify_lunch,
-                                        time=datetime.time(11, 00, 0, tzinfo=pytz.timezone('Asia/Ho_Chi_Minh')),
+                                        time=datetime.time(10, 30, 0, tzinfo=pytz.timezone('Asia/Ho_Chi_Minh')),
                                         days=tuple(range(1,6)), # ignore weekends
                                         chat_id=chat_id,
                                         name=job_name,
@@ -212,7 +212,7 @@ def init_notify_schedule(application:Application):
         if not db.get(chat_id).get("is_daily_notify"):
             continue
         job_queue.run_daily(notify_lunch,
-                            time=datetime.time(13,48,0, tzinfo=pytz.timezone('Asia/Ho_Chi_Minh')),
+                            time=datetime.time(10,30,0, tzinfo=pytz.timezone('Asia/Ho_Chi_Minh')),
                             days=tuple(range(1,6)), # ignore weekends
                             chat_id=chat_id,
                             name=f"notify_lunch_{str(chat_id)}"
