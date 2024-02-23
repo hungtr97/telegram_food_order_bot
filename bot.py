@@ -220,8 +220,14 @@ def init_notify_schedule(application:Application):
 
 
 def main() -> None:
-    application = Application.builder().token("6528017239:AAGN59Vgr3v8podnhIZoyobis7XqaERHIuo").build()
+    token = None
+    try:
+        token = open("token.txt").read().strip()
+    except:
+        print("Fail to load token")
+        exit(1)
 
+    application = Application.builder().token(token).build()
     # on different commands - answer in Telegram
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("order", order_command))
