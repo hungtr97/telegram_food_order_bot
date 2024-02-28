@@ -54,7 +54,7 @@ async def close_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         chat_id = update.effective_message.chat_id
         if str(chat_id) == "4179085435": # group "Đặt cơm 2024"
             if len(candidates) > 0:
-                pickup_persons = ', '.join(random.choices(candidates, k=len(candidates)//10+1))
+                pickup_persons = ', '.join(random.sample(candidates, k=len(candidates)//10+1))
                 await update.message.reply_text(f"<b>{pickup_persons}</b> ơi, chúng tôi tin bạn 🙆‍♂️", parse_mode=ParseMode.HTML)
 
 
