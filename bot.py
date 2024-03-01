@@ -66,6 +66,9 @@ async def open_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             'isOpen' : True,
             'orders' : {}
         }
+    elif value['isOpen']:
+        await update.message.reply_text(f"chê", parse_mode=ParseMode.HTML)
+        return
     else:
         value['isOpen'] = True
         value['orders'] = {}
@@ -123,19 +126,21 @@ async def order_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     orders = value['orders']
     if is_close:
         images = os.listdir("images")
+        images.remove("image.jpeg")
         image_path = os.path.join("images", random.choice(images))
         await update.message.reply_sticker(image_path)
         await update.message.reply_text("Đóng đơn rồi đó đá đa...")
         return
     
-    must_delete = value.get("must_delete")
-    if must_delete:
-        await context.bot.deleteMessage(message_id=must_delete['message_id'], chat_id=must_delete['chat_id'])
-
     _order = get_text_from_command(update)
     _order = _order.lower().strip()
     if _order == "":
         return await update.message.reply_text("Món không hợp lệ.")
+    
+    must_delete = value.get("must_delete")
+    if must_delete:
+        await context.bot.deleteMessage(message_id=must_delete['message_id'], chat_id=must_delete['chat_id'])
+
     fn = update.message.from_user.first_name if update.message.from_user.first_name else ""
     ln = update.message.from_user.last_name if update.message.from_user.last_name else ""
     _o_name = " ".join([fn, ln])
