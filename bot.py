@@ -128,14 +128,18 @@ async def order_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         await update.message.reply_text("Đóng đơn rồi đó đá đa...")
         return
     
-    must_delete = value.get("must_delete")
-    if must_delete:
-        await context.bot.deleteMessage(message_id=must_delete['message_id'], chat_id=must_delete['chat_id'])
-
     _order = get_text_from_command(update)
     _order = _order.lower().strip()
     if _order == "":
         return await update.message.reply_text("Món không hợp lệ.")
+    
+    must_delete = value.get("must_delete")
+    if must_delete:
+        try:
+            await context.bot.deleteMessage(message_id=must_delete['message_id'], chat_id=must_delete['chat_id'])
+        except:
+            pass
+    
     fn = update.message.from_user.first_name if update.message.from_user.first_name else ""
     ln = update.message.from_user.last_name if update.message.from_user.last_name else ""
     _o_name = " ".join([fn, ln])
