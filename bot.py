@@ -66,6 +66,8 @@ async def open_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             'isOpen' : True,
             'orders' : {}
         }
+    elif value['isOpen']:
+        return await update.message.reply_text(f"chê", parse_mode=ParseMode.HTML)
     else:
         value['isOpen'] = True
         value['orders'] = {}
@@ -123,6 +125,7 @@ async def order_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     orders = value['orders']
     if is_close:
         images = os.listdir("images")
+        images.remove("image.jpeg")
         image_path = os.path.join("images", random.choice(images))
         await update.message.reply_sticker(image_path)
         await update.message.reply_text("Đóng đơn rồi đó đá đa...")
