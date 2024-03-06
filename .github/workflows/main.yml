@@ -1,0 +1,22 @@
+on:
+  workflow_dispatch:
+jobs:
+  deploy_job:
+    name: deploy
+    runs-on: ubuntu-latest
+    steps:
+    - name: executing remote ssh
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.CD_HOST }}
+        port: ${{ secrets.CD_PORT }}
+        username: ${{ secrets.CD_USERNAME }}
+        key: ${{ secrets.CD_KEY }}
+        script_stop: true
+        script: |
+          cd ~/order_bot
+          git reset --hard
+          git pull
+          pm2 reload order_bot
+        
+    
