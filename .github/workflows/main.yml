@@ -13,6 +13,7 @@ jobs:
         username: ${{ env.CD_USERNAME }}
         key: ${{ secrets.CD_KEY }}
         script_stop: true
+        debug: true
         script: |
           cd ~/order_bot
           git reset --hard
