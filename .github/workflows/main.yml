@@ -18,6 +18,6 @@ jobs:
           cd ~/order_bot
           git reset --hard
           git pull
-          pm2 reload order_bot
+          pm2 reload order-bot
         
     
