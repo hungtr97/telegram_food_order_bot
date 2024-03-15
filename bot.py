@@ -27,6 +27,12 @@ def get_text_from_command(update:Update):
             return text[it.length+1:]
 
 
+def gen_order_sum(goods):
+    order_sum = "Tiểu nhị! cho gọi món:\n"
+    for order in goods:
+        order_sum += f"{len(goods[order])} phần - <b>{order}</b>: {','.join(goods[order])}\n"
+    return order_sum
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
@@ -95,7 +101,6 @@ async def retract_order_command(update: Update, context: ContextTypes.DEFAULT_TY
     value['orders'] = orders
     db.set(chat_id, value)
     
-    order_sum = "Tiểu nhị! cho gọi món:\n"
     goods = {}
     for participant in orders:
         order = orders[participant]
@@ -103,8 +108,7 @@ async def retract_order_command(update: Update, context: ContextTypes.DEFAULT_TY
             goods[order] = []
         goods[order].append(participant)
 
-    for order in goods:
-        order_sum += f"<b>{order}</b>: {','.join(goods[order])}\n"
+    order_sum = gen_order_sum(goods)
     must_delete = await context.bot.send_message(update.effective_chat.id, order_sum,
                                    parse_mode=ParseMode.HTML)
     must_delete = {
@@ -152,7 +156,6 @@ async def order_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     
     value['orders'] = orders
 
-    order_sum = "Tiểu nhị! cho gọi món:\n"
     goods = {}
     for participant in orders:
         order = orders[participant]
@@ -160,8 +163,7 @@ async def order_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             goods[order] = []
         goods[order].append(participant)
 
-    for order in goods:
-        order_sum += f"<b>{order}</b>: {','.join(goods[order])}\n"
+    order_sum = gen_order_sum(goods)
     must_delete = await context.bot.send_message(update.effective_chat.id, order_sum,
                                    parse_mode=ParseMode.HTML)
     must_delete = {
