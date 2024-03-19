@@ -28,7 +28,8 @@ def get_text_from_command(update:Update):
 
 
 def gen_order_sum(goods):
-    order_sum = "Tiểu nhị! cho gọi món:\n"
+    count_total = sum(map(len, goods.values()))
+    order_sum = f"Tiểu nhị! cho gọi {count_total} món:\n"
     for order in goods:
         order_sum += f"{len(goods[order])} phần - <b>{order}</b>: {','.join(goods[order])}\n"
     return order_sum
