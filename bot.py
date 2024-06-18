@@ -87,6 +87,7 @@ async def open_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 async def retract_order_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = str(update.message.chat.id)
+    message_thread_id = update.message.message_thread_id
     value = db.get(chat_id)
     if not value:
         return
@@ -111,7 +112,8 @@ async def retract_order_command(update: Update, context: ContextTypes.DEFAULT_TY
 
     order_sum = gen_order_sum(goods)
     must_delete = await context.bot.send_message(update.effective_chat.id, order_sum,
-                                   parse_mode=ParseMode.HTML)
+                                                 message_thread_id=message_thread_id,
+                                                 parse_mode=ParseMode.HTML)
     must_delete = {
         "message_id": must_delete.message_id,
         "chat_id": update.message.chat_id
@@ -123,6 +125,7 @@ async def retract_order_command(update: Update, context: ContextTypes.DEFAULT_TY
 async def order_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     print(update, context)
     chat_id = str(update.message.chat.id)
+    message_thread_id = update.message.message_thread_id
     value = db.get(chat_id)
     if not value:
         return
@@ -166,7 +169,8 @@ async def order_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     order_sum = gen_order_sum(goods)
     must_delete = await context.bot.send_message(update.effective_chat.id, order_sum,
-                                   parse_mode=ParseMode.HTML)
+                                                 message_thread_id=message_thread_id,
+                                                 parse_mode=ParseMode.HTML)
     must_delete = {
         "message_id": must_delete.message_id,
         "chat_id": update.message.chat_id
