@@ -59,7 +59,9 @@ async def close_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         db.set(chat_id, value)
         await update.message.reply_text("✅ OK!")
         chat_id = update.effective_message.chat_id
-        if str(chat_id) == "-4179085435": # group "Đặt cơm 2024"
+        value = get_text_from_command(update)
+        chat_id_configs = db.get(str(chat_id))
+        if chat_id_configs.get("is_random_pickup"):
             if len(candidates) > 0:
                 pickup_persons = ', '.join(random.sample(candidates, k=len(candidates)//10+1))
                 await update.message.reply_text(f"<b>{pickup_persons}</b> ơi, chúng tôi tin bạn 🙆‍♂️", parse_mode=ParseMode.HTML)
@@ -189,6 +191,19 @@ async def notify_lunch(context: ContextTypes.DEFAULT_TYPE) -> None:
     df = pd.read_csv("vendors.csv")
     choosen_food = df.sample(1).iloc[0]["name"]
     await context.bot.send_message(job.chat_id, text=f"{choosen_food} đê")
+
+async def judge_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """turn on/off randomly choosing pickup persons"""
+    chat_id = update.effective_message.chat_id
+    value = get_text_from_command(update)
+    chat_id_configs = db.get(str(chat_id))
+    if not value in ["on", "off"]:
+        status = "Bật" if chat_id_configs.get("is_random_pickup") else "Tắt"
+        return await update.effective_message.reply_text(f"Chọn người lấy đơn đang {status}.")
+    
+    chat_id_configs["is_random_pickup"] = True if (value=="on") else False
+    db.set(str(chat_id), chat_id_configs)
+    return await update.effective_message.reply_text("✅ OK!")
 
 
 async def notify_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
