@@ -264,6 +264,7 @@ def main() -> None:
     application.add_handler(CommandHandler("close", close_command))
     application.add_handler(CommandHandler("open", open_command))
     application.add_handler(CommandHandler("notify", notify_command))
+    application.add_handler(CommandHandler("judge", judge_command))
 
     # 
     init_notify_schedule(application)
