@@ -8,6 +8,7 @@ import pickledb
 db = pickledb.load('order.db', True)
 import random
 import os
+import requests
 
 # Enable logging
 logging.basicConfig(
@@ -247,6 +248,34 @@ def init_notify_schedule(application:Application):
                             name=f"notify_lunch_{str(chat_id)}"
                             )
 
+async def duck_race_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    chat_id = str(update.message.chat.id)
+    message_thread_id = update.message.message_thread_id
+    value = db.get(chat_id)
+    if not value:
+        value = {
+            "isOpen": False,
+            'orders' : {}
+        }
+        db.set(chat_id, value)
+        await update.message.reply_text("✅ OK!")
+    else:
+        candidates = list(value['orders'].keys())
+        await update.message.reply_text("✅ OK!")
+        chat_id = update.effective_message.chat_id
+        try:
+            jdata = {
+                "id": str(chat_id),
+                "lists": candidates
+            }
+            res = requests.post("http://127.0.0.1:8055/duck-race", json=jdata)
+            with open(f'temp_{str(chat_id)}.gif', 'wb') as f:
+                f.write(res.content)
+            giff = open(f'temp_{str(chat_id)}.gif', 'rb')
+            await context.bot.send_animation(chat_id, animation=giff)
+            os.remove(f'temp_{str(chat_id)}.gif')
+        except:
+            return await context.bot.send_message(chat_id, message_thread_id=message_thread_id, text="Cáo lỗi chư vị sư huynh, Vịt đang bận đi ăn cám rồi :(")
 
 def main() -> None:
     token = None
@@ -265,6 +294,7 @@ def main() -> None:
     application.add_handler(CommandHandler("open", open_command))
     application.add_handler(CommandHandler("notify", notify_command))
     application.add_handler(CommandHandler("judge", judge_command))
+    application.add_handler(CommandHandler("duckrace", duck_race_command))
 
     # 
     init_notify_schedule(application)
