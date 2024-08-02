@@ -263,17 +263,21 @@ async def duck_race_command(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         candidates = list(value['orders'].keys())
         await update.message.reply_text("✅ OK!")
         chat_id = update.effective_message.chat_id
+        loading_gif = open('duck-load-loading-sd.gif', 'rb')
+        loading_message = await context.bot.send_animation(chat_id, animation=loading_gif)
         try:
             jdata = {
                 "id": str(chat_id),
                 "lists": candidates
             }
-            res = requests.post("http://127.0.0.1:8055/duck-race", json=jdata)
-            with open(f'temp_{str(chat_id)}.gif', 'wb') as f:
+            res = requests.post("http://10.0.0.11:8055/duck-race", json=jdata)
+            with open(f'temp_{str(chat_id)}.mp4', 'wb') as f:
                 f.write(res.content)
-            giff = open(f'temp_{str(chat_id)}.gif', 'rb')
-            await context.bot.send_animation(chat_id, animation=giff)
-            os.remove(f'temp_{str(chat_id)}.gif')
+            vidd = open(f'temp_{str(chat_id)}.mp4', 'rb')
+            # await context.bot.send_animation(chat_id, animation=giff)
+            await context.bot.deleteMessage(message_id=loading_message.message_id, chat_id=chat_id)
+            await context.bot.send_video(chat_id, video=vidd, message_thread_id=message_thread_id)
+            os.remove(f'temp_{str(chat_id)}.mp4')
         except:
             return await context.bot.send_message(chat_id, message_thread_id=message_thread_id, text="Cáo lỗi chư vị sư huynh, Vịt đang bận đi ăn cám rồi :(")
 
